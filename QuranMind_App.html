@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuranMind — AI-Powered Quranic Understanding</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #FAFAF7;
+            --surface: #FFFFFF;
+            --surface-alt: #F5F3EE;
+            --border: #E8E4DC;
+            --text: #1A1A1A;
+            --text-secondary: #6B6560;
+            --accent: #1B6B4A;
+            --accent-light: #E8F5EE;
+            --accent-dark: #145236;
+            --gold: #C4972A;
+            --gold-light: #FBF5E8;
+            --danger: #B8533E;
+            --danger-light: #FFF0ED;
+            --chat-user: #E8F5EE;
+            --chat-ai: #F5F3EE;
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --radius: 10px;
+            --radius-lg: 16px;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ── DISCLAIMER BANNER ── */
+        .disclaimer-banner {
+            background: var(--gold-light);
+            border-bottom: 1px solid #E8DFC0;
+            padding: 10px 24px;
+            font-size: 13px;
+            color: #7A6520;
+            text-align: center;
+            line-height: 1.5;
+        }
+        .disclaimer-banner strong { color: #5C4A10; }
+
+        /* ── HEADER ── */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: 'Amiri', serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-dark);
+            letter-spacing: -0.3px;
+        }
+        .logo-text span { color: var(--text-secondary); font-weight: 400; font-size: 14px; margin-left: 6px; }
+
+        .api-key-section { display: flex; align-items: center; gap: 8px; }
+        .api-key-section input {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'DM Sans', sans-serif;
+            width: 240px;
+            background: var(--surface-alt);
+        }
+        .api-key-section input:focus { outline: none; border-color: var(--accent); }
+        .api-key-section label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+
+        /* ── LAYOUT ── */
+        .app-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr 420px;
+            height: calc(100vh - 110px);
+        }
+
+        /* ── SURAH SIDEBAR ── */
+        .surah-sidebar {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sidebar-header h2 {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+        .search-box {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--surface-alt);
+        }
+        .search-box:focus { outline: none; border-color: var(--accent); background: white; }
+
+        .surah-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        .surah-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .surah-item:hover { background: var(--surface-alt); }
+        .surah-item.active { background: var(--accent-light); }
+        .surah-number {
+            width: 32px; height: 32px;
+            background: var(--surface-alt);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        .surah-item.active .surah-number { background: var(--accent); color: white; }
+        .surah-info { flex: 1; min-width: 0; }
+        .surah-name { font-size: 14px; font-weight: 600; color: var(--text); }
+        .surah-meta { font-size: 11px; color: var(--text-secondary); }
+
+        /* ── VERSE PANEL ── */
+        .verse-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg);
+        }
+        .verse-panel-header {
+            padding: 20px 28px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+        .verse-panel-header h2 { font-size: 18px; font-weight: 700; }
+        .verse-panel-header p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+        .verse-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 28px;
+        }
+        .verse-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .verse-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+        .verse-card.selected {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            box-shadow: 0 0 0 3px rgba(27, 107, 74, 0.12);
+        }
+        .verse-card .verse-number-badge {
+            display: inline-block;
+            background: var(--surface-alt);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+        .verse-card.selected .verse-number-badge { background: var(--accent); color: white; }
+        .verse-arabic {
+            font-family: 'Amiri', serif;
+            font-size: 24px;
+            line-height: 2;
+            direction: rtl;
+            text-align: right;
+            color: var(--text);
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .verse-english {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .placeholder-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 40px;
+        }
+        .placeholder-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+        .placeholder-state h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+        .placeholder-state p { font-size: 13px; max-width: 280px; }
+
+        /* ── CHAT PANEL ── */
+        .chat-panel {
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .chat-header h2 { font-size: 15px; font-weight: 700; }
+        .chat-header p { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chat-bubble {
+            max-width: 92%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .chat-bubble.user {
+            background: var(--chat-user);
+            color: var(--accent-dark);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-bubble.ai {
+            background: var(--chat-ai);
+            color: var(--text);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-bubble.error {
+            background: var(--danger-light);
+            color: var(--danger);
+            align-self: center;
+            font-size: 13px;
+            text-align: center;
+        }
+        .chat-bubble .disclaimer-inline {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 14px 18px;
+            background: var(--chat-ai);
+            border-radius: 12px;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .typing-indicator span {
+            width: 6px; height: 6px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.16s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.32s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-6px); }
+        }
+
+        .chat-input-area {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            background: var(--surface-alt);
+        }
+        .chat-input-wrap {
+            display: flex;
+            gap: 8px;
+        }
+        .chat-input-wrap textarea {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'DM Sans', sans-serif;
+            resize: none;
+            height: 44px;
+            background: var(--surface);
+        }
+        .chat-input-wrap textarea:focus { outline: none; border-color: var(--accent); }
+        .chat-input-wrap textarea:disabled { opacity: 0.5; }
+        .send-btn {
+            padding: 10px 20px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .send-btn:hover { background: var(--accent-dark); }
+        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .no-verse-warning {
+            font-size: 12px;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+
+        /* ── LOADING ── */
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        .loading-spinner::after {
+            content: '';
+            width: 28px; height: 28px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #CCC; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1024px) {
+            .app-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; height: auto; }
+            .surah-sidebar { max-height: 250px; border-right: none; border-bottom: 1px solid var(--border); }
+            .chat-panel { border-left: none; border-top: 1px solid var(--border); min-height: 400px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Disclaimer Banner -->
+<div class="disclaimer-banner">
+    <strong>⚠ Educational Tool — Not Religious Authority.</strong>
+    This tool uses AI to provide educational context about Quranic verses.
+    AI-generated explanations are <strong>not a substitute</strong> for guidance from qualified Islamic scholars.
+    Always consult a scholar for religious rulings and personal guidance.
+</div>
+
+<!-- Header -->
+<header>
+    <div class="logo">
+        <div class="logo-icon">ق</div>
+        <div class="logo-text">QuranMind <span>AI-Powered Quranic Understanding</span></div>
+    </div>
+    <div class="api-key-section">
+        <label for="apiKey">API Key:</label>
+        <input type="password" id="apiKey" placeholder="Enter your Anthropic API key" />
+    </div>
+</header>
+
+<!-- Main Layout -->
+<div class="app-layout">
+
+    <!-- Surah Sidebar -->
+    <div class="surah-sidebar">
+        <div class="sidebar-header">
+            <h2>Surahs</h2>
+            <input type="text" class="search-box" id="surahSearch" placeholder="Search surahs..." />
+        </div>
+        <div class="surah-list" id="surahList">
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
+    <!-- Verse Panel -->
+    <div class="verse-panel">
+        <div class="verse-panel-header" id="versePanelHeader" style="display:none;">
+            <h2 id="surahTitle"></h2>
+            <p id="surahSubtitle"></p>
+        </div>
+        <div class="verse-list" id="verseList">
+            <div class="placeholder-state">
+                <div class="icon">📖</div>
+                <h3>Select a Surah</h3>
+                <p>Choose a Surah from the list to view its verses with Arabic text and English translation.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Panel -->
+    <div class="chat-panel">
+        <div class="chat-header">
+            <h2>Ask About a Verse</h2>
+            <p>Select a verse, then ask a question for AI-powered context.</p>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="placeholder-state">
+                <div class="icon">💬</div>
+                <h3>Start a Conversation</h3>
+                <p>Select a verse and ask a question to receive a contextual explanation grounded in Islamic scholarship.</p>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <div id="noVerseWarning" class="no-verse-warning" style="display:none;">
+                ⚠ Please select a verse first.
+            </div>
+            <div class="chat-input-wrap">
+                <textarea id="chatInput" placeholder="Ask about the selected verse..." rows="1"></textarea>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">Ask</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ── STATE ──
+    let surahs = [];
+    let selectedSurah = null;
+    let selectedVerse = null;
+    let isLoading = false;
+    let chatHistory = [];
+
+    // ── SYSTEM PROMPT ──
+    const SYSTEM_PROMPT = `You are an educational assistant that helps English-speaking Muslims understand Quranic verses in context. Your role is strictly educational and supplementary.
+
+GUIDELINES:
+- Provide contextual explanations grounded in mainstream Islamic scholarship.
+- Reference well-known tafsir sources where relevant, such as Tafsir Ibn Kathir, Tafsir al-Jalalayn, Tafsir al-Tabari, and other reputable works.
+- Explain the historical context of revelation (Asbab al-Nuzul) when known and relevant.
+- Clearly state when something is a matter of scholarly debate or when multiple valid interpretations exist.
+- NEVER issue fatwas, religious rulings, or authoritative legal opinions.
+- NEVER claim to replace qualified Islamic scholars.
+- Encourage the user to consult qualified scholars for personal religious guidance, especially for matters of Islamic law (fiqh).
+- If you are unsure about a specific interpretation, say so clearly rather than guessing.
+- Keep explanations accessible to English-speaking Muslims who may not have formal Islamic education.
+- Be respectful and reverent when discussing Quranic content.
+
+RESPONSE FORMAT:
+- Provide clear, well-structured explanations.
+- When citing a tafsir, name the source.
+- End substantive responses with a brief note encouraging further study with qualified scholars.`;
+
+    // ── FETCH SURAHS ──
+    async function loadSurahs() {
+        try {
+            const res = await fetch('https://api.alquran.cloud/v1/surah');
+            const data = await res.json();
+            surahs = data.data;
+            renderSurahList(surahs);
+        } catch (err) {
+            document.getElementById('surahList').innerHTML =
+                '<div class="placeholder-state"><p>Failed to load Surahs. Please check your internet connection and refresh.</p></div>';
+        }
+    }
+
+    function renderSurahList(list) {
+        const container = document.getElementById('surahList');
+        container.innerHTML = list.map(s => `
+            <div class="surah-item ${selectedSurah?.number === s.number ? 'active' : ''}"
+                 onclick="selectSurah(${s.number})">
+                <div class="surah-number">${s.number}</div>
+                <div class="surah-info">
+                    <div class="surah-name">${s.englishName}</div>
+                    <div class="surah-meta">${s.englishNameTranslation} · ${s.numberOfAyahs} verses</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ── SEARCH ──
+    document.getElementById('surahSearch').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        const filtered = surahs.filter(s =>
+            s.englishName.toLowerCase().includes(q) ||
+            s.englishNameTranslation.toLowerCase().includes(q) ||
+            s.number.toString().includes(q)
+        );
+        renderSurahList(filtered);
+    });
+
+    // ── SELECT SURAH ──
+    async function selectSurah(number) {
+        selectedSurah = surahs.find(s => s.number === number);
+        selectedVerse = null;
+        renderSurahList(surahs.filter(s => {
+            const q = document.getElementById('surahSearch').value.toLowerCase();
+            return !q || s.englishName.toLowerCase().includes(q) || s.englishNameTranslation.toLowerCase().includes(q) || s.number.toString().includes(q);
+        }));
+
+        const header = document.getElementById('versePanelHeader');
+        header.style.display = 'block';
+        document.getElementById('surahTitle').textContent = `${selectedSurah.number}. ${selectedSurah.englishName}`;
+        document.getElementById('surahSubtitle').textContent = `${selectedSurah.englishNameTranslation} · ${selectedSurah.revelationType} · ${selectedSurah.numberOfAyahs} verses`;
+
+        const verseList = document.getElementById('verseList');
+        verseList.innerHTML = '<div class="loading-spinner"></div>';
+
+        try {
+            const [arRes, enRes] = await Promise.all([
+                fetch(`https://api.alquran.cloud/v1/surah/${number}`),
+                fetch(`https://api.alquran.cloud/v1/surah/${number}/en.asad`)
+            ]);
+            const arData = await arRes.json();
+            const enData = await enRes.json();
+
+            const arAyahs = arData.data.ayahs;
+            const enAyahs = enData.data.ayahs;
+
+            verseList.innerHTML = arAyahs.map((a, i) => `
+                <div class="verse-card" id="verse-${a.numberInSurah}" onclick="selectVerse(${a.numberInSurah}, this)">
+                    <div class="verse-number-badge">Verse ${a.numberInSurah}</div>
+                    <div class="verse-arabic">${a.text}</div>
+                    <div class="verse-english">${enAyahs[i]?.text || ''}</div>
+                </div>
+            `).join('');
+        } catch (err) {
+            verseList.innerHTML = '<div class="placeholder-state"><p>Failed to load verses. Please try again.</p></div>';
+        }
+    }
+
+    // ── SELECT VERSE ──
+    function selectVerse(num, el) {
+        document.querySelectorAll('.verse-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedVerse = num;
+        document.getElementById('noVerseWarning').style.display = 'none';
+    }
+
+    // ── SEND MESSAGE ──
+    async function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const question = input.value.trim();
+        if (!question) return;
+
+        if (!selectedVerse || !selectedSurah) {
+            document.getElementById('noVerseWarning').style.display = 'block';
+            return;
+        }
+
+        const apiKey = document.getElementById('apiKey').value.trim();
+        if (!apiKey) {
+            addChatBubble('Please enter your Anthropic API key in the header.', 'error');
+            return;
+        }
+
+        // Get verse text
+        const verseCard = document.getElementById(`verse-${selectedVerse}`);
+        const arabic = verseCard?.querySelector('.verse-arabic')?.textContent || '';
+        const english = verseCard?.querySelector('.verse-english')?.textContent || '';
+
+        addChatBubble(question, 'user');
+        input.value = '';
+        input.disabled = true;
+        document.getElementById('sendBtn').disabled = true;
+
+        // Show typing indicator
+        const typingEl = document.createElement('div');
+        typingEl.className = 'typing-indicator';
+        typingEl.innerHTML = '<span></span><span></span><span></span>';
+        document.getElementById('chatMessages').appendChild(typingEl);
+        scrollChat();
+
+        const userPrompt = `I am reading Surah ${selectedSurah.englishName} (${selectedSurah.englishNameTranslation}), Verse ${selectedVerse}.
+
+Arabic text: ${arabic}
+
+English translation: ${english}
+
+My question: ${question}`;
+
+        try {
+            const res = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: 'claude-sonnet-4-20250514',
+                    max_tokens: 1024,
+                    system: SYSTEM_PROMPT,
+                    messages: [
+                        ...chatHistory,
+                        { role: 'user', content: userPrompt }
+                    ]
+                })
+            });
+
+            typingEl.remove();
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error?.message || `API error: ${res.status}`);
+            }
+
+            const data = await res.json();
+            const reply = data.content.map(c => c.text || '').join('\n');
+
+            chatHistory.push({ role: 'user', content: userPrompt });
+            chatHistory.push({ role: 'assistant', content: reply });
+
+            // Keep history manageable
+            if (chatHistory.length > 10) chatHistory = chatHistory.slice(-10);
+
+            addChatBubble(reply, 'ai');
+        } catch (err) {
+            typingEl.remove();
+            addChatBubble(`Error: ${err.message}`, 'error');
+        }
+
+        input.disabled = false;
+        document.getElementById('sendBtn').disabled = false;
+        input.focus();
+    }
+
+    function addChatBubble(text, type) {
+        const messages = document.getElementById('chatMessages');
+        // Remove placeholder
+        const placeholder = messages.querySelector('.placeholder-state');
+        if (placeholder) placeholder.remove();
+
+        const bubble = document.createElement('div');
+        bubble.className = `chat-bubble ${type}`;
+
+        if (type === 'ai') {
+            bubble.textContent = text;
+            const disc = document.createElement('div');
+            disc.className = 'disclaimer-inline';
+            disc.textContent = '⚠ AI-generated explanation. Not a substitute for qualified Islamic scholarship. Consult a scholar for personal guidance.';
+            bubble.appendChild(disc);
+        } else {
+            bubble.textContent = text;
+        }
+
+        messages.appendChild(bubble);
+        scrollChat();
+    }
+
+    function scrollChat() {
+        const messages = document.getElementById('chatMessages');
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    // Enter to send
+    document.getElementById('chatInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // ── INIT ──
+    loadSurahs();
+</script>
+
+</body>
+</html>
